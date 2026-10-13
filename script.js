@@ -1,1927 +1,742 @@
-/* =========================================================
-   ARIEL FUTURE PORTFOLIO
-   MAIN JAVASCRIPT
-========================================================= */
 
+"use strict";
 
 /* =========================================================
-   DOM READY
+   ARIEL — CREATIVE PORTFOLIO SYSTEM
 ========================================================= */
 
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
+const $ = (selector, parent = document) => parent.querySelector(selector);
+const $$ = (selector, parent = document) => [
+  ...parent.querySelectorAll(selector)
+];
 
-        initPreloader();
+document.addEventListener("DOMContentLoaded", () => {
+  initPreloader();
+  initNavbar();
+  initMobileMenu();
+  initSmoothScroll();
+  initReveal();
+  initProjectFilter();
+  initProjectModal();
+  initCursor();
+  initClock();
+  initCertificateViewer();
+  initMusic();
+});
 
-        initNavbar();
-
-        initMobileMenu();
-
-        initSmoothScroll();
-
-        initReveal();
-
-        initProjectFilter();
-
-        initProjectModal();
-
-        initCursor();
-
-        initClock();
-
-        initCoreInteraction();
-
-        initButtons();
-
-        initMusic();
-
-    }
-);
-
-
-/* =========================================================
-   PRELOADER
-========================================================= */
+/* PRELOADER */
 
 function initPreloader() {
+  const preloader = $("#preloader");
+  const percent = $("[data-loader-percent]");
+  const bar = $(".preloader-line span");
 
-    const preloader =
-        document.querySelector(
-            "#preloader"
-        );
+  if (!preloader) return;
 
-    const progress =
-        document.querySelector(
-            ".preloader-line span"
-        );
+  let progress = 0;
+  const reducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  ).matches;
 
-    const percent =
-        document.querySelector(
-            "[data-loader-percent]"
-        );
+  const finish = () => {
+    preloader.classList.add("loaded");
+    document.body.classList.add("page-ready");
+    window.setTimeout(() => preloader.remove(), 700);
+  };
 
+  if (reducedMotion) {
+    if (percent) percent.textContent = "100%";
+    if (bar) bar.style.width = "100%";
+    finish();
+    return;
+  }
 
-    if (!preloader) return;
+  const interval = window.setInterval(() => {
+    progress += Math.floor(Math.random() * 13) + 5;
+    progress = Math.min(progress, 100);
 
+    if (percent) percent.textContent = `${progress}%`;
+    if (bar) bar.style.width = `${progress}%`;
 
-    let value = 0;
+    if (progress >= 100) {
+      window.clearInterval(interval);
+      window.setTimeout(finish, 250);
+    }
+  }, 100);
 
+  // Prevent the loading screen from remaining forever.
+  window.addEventListener("load", () => {
+    window.clearInterval(interval);
+    if (percent) percent.textContent = "100%";
+    if (bar) bar.style.width = "100%";
+    window.setTimeout(finish, 150);
+  }, { once: true });
 
-    const timer =
-        setInterval(
-            () => {
-
-                value +=
-                    Math.floor(
-                        Math.random() * 8
-                    ) + 3;
-
-
-                if (value >= 100) {
-
-                    value = 100;
-
-                }
-
-
-                if (progress) {
-
-                    progress.style.width =
-                        `${value}%`;
-
-                }
-
-
-                if (percent) {
-
-                    percent.textContent =
-                        `${value}%`;
-
-                }
-
-
-                if (value >= 100) {
-
-                    clearInterval(timer);
-
-
-                    setTimeout(
-                        () => {
-
-                            preloader.classList.add(
-                                "hidden"
-                            );
-
-                        },
-                        450
-                    );
-
-                }
-
-            },
-            80
-        );
-
+  window.setTimeout(() => {
+    window.clearInterval(interval);
+    finish();
+  }, 2500);
 }
 
-
-/* =========================================================
-   NAVBAR
-========================================================= */
+/* NAVBAR */
 
 function initNavbar() {
+  const navbar = $(".navbar");
+  const links = $$(".nav-link");
+  const sections = links
+    .map(link => $(link.getAttribute("href")))
+    .filter(Boolean);
 
-    const navbar =
-        document.querySelector(
-            ".navbar"
-        );
-
-
-    if (!navbar) return;
-
-
-    function updateNavbar() {
-
-        if (window.scrollY > 40) {
-
-            navbar.classList.add(
-                "scrolled"
-            );
-
-        } else {
-
-            navbar.classList.remove(
-                "scrolled"
-            );
-
-        }
-
+  const updateNavbar = () => {
+    if (navbar) {
+      navbar.classList.toggle("scrolled", window.scrollY > 30);
     }
 
+    let currentId = "home";
 
-    updateNavbar();
+    sections.forEach(section => {
+      if (section.getBoundingClientRect().top <= 160) {
+        currentId = section.id;
+      }
+    });
 
+    links.forEach(link => {
+      const isActive = link.getAttribute("href") === `#${currentId}`;
+      link.classList.toggle("active", isActive);
 
-    window.addEventListener(
-        "scroll",
-        updateNavbar,
-        {
-            passive: true
-        }
-    );
+      if (isActive) {
+        link.setAttribute("aria-current", "location");
+      } else {
+        link.removeAttribute("aria-current");
+      }
+    });
+  };
 
-
-    const sections =
-        document.querySelectorAll(
-            "section[id]"
-        );
-
-    const links =
-        document.querySelectorAll(
-            ".nav-link"
-        );
-
-
-    const observer =
-        new IntersectionObserver(
-            entries => {
-
-                entries.forEach(
-                    entry => {
-
-                        if (!entry.isIntersecting) {
-                            return;
-                        }
-
-
-                        links.forEach(
-                            link => {
-
-                                link.classList.remove(
-                                    "active"
-                                );
-
-
-                                if (
-                                    link.getAttribute(
-                                        "href"
-                                    ) ===
-                                    `#${entry.target.id}`
-                                ) {
-
-                                    link.classList.add(
-                                        "active"
-                                    );
-
-                                }
-
-                            }
-                        );
-
-                    }
-                );
-
-            },
-            {
-                threshold: .35
-            }
-        );
-
-
-    sections.forEach(
-        section => {
-
-            observer.observe(
-                section
-            );
-
-        }
-    );
-
+  window.addEventListener("scroll", updateNavbar, { passive: true });
+  updateNavbar();
 }
 
-
-/* =========================================================
-   MOBILE MENU
-========================================================= */
+/* MOBILE MENU */
 
 function initMobileMenu() {
+  const menuButton = $(".mobile-menu");
+  const navigation = $(".navigation");
 
-    const button =
-        document.querySelector(
-            ".mobile-menu"
-        );
+  if (!menuButton || !navigation) return;
 
-    const navigation =
-        document.querySelector(
-            ".navigation"
-        );
+  const closeMenu = () => {
+    navigation.classList.remove("open");
+    menuButton.setAttribute("aria-expanded", "false");
+    menuButton.setAttribute("aria-label", "Open menu");
+  };
 
+  menuButton.addEventListener("click", () => {
+    const isOpen = navigation.classList.toggle("open");
 
-    if (!button || !navigation) {
-        return;
-    }
-
-
-    button.addEventListener(
-        "click",
-        () => {
-
-            navigation.classList.toggle(
-                "open"
-            );
-
-        }
+    menuButton.setAttribute("aria-expanded", String(isOpen));
+    menuButton.setAttribute(
+      "aria-label",
+      isOpen ? "Close menu" : "Open menu"
     );
+  });
 
+  $$(".nav-link", navigation).forEach(link => {
+    link.addEventListener("click", closeMenu);
+  });
 
-    navigation
-        .querySelectorAll("a")
-        .forEach(
-            link => {
+  document.addEventListener("click", event => {
+    if (
+      navigation.classList.contains("open") &&
+      !navigation.contains(event.target) &&
+      !menuButton.contains(event.target)
+    ) {
+      closeMenu();
+    }
+  });
 
-                link.addEventListener(
-                    "click",
-                    () => {
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") closeMenu();
+  });
 
-                        navigation.classList.remove(
-                            "open"
-                        );
-
-                    }
-                );
-
-            }
-        );
-
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 780) closeMenu();
+  });
 }
 
-
-/* =========================================================
-   SMOOTH SCROLL
-========================================================= */
+/* SMOOTH SCROLL */
 
 function initSmoothScroll() {
+  $$('a[href^="#"]').forEach(link => {
+    link.addEventListener("click", event => {
+      const href = link.getAttribute("href");
 
-    document
-        .querySelectorAll(
-            'a[href^="#"]'
-        )
-        .forEach(
-            link => {
+      if (!href || href === "#") {
+        event.preventDefault();
+        return;
+      }
 
-                link.addEventListener(
-                    "click",
-                    event => {
+      const target = $(href);
+      if (!target) return;
 
-                        const targetId =
-                            link.getAttribute(
-                                "href"
-                            );
+      event.preventDefault();
 
+      target.scrollIntoView({
+        behavior: window.matchMedia(
+          "(prefers-reduced-motion: reduce)"
+        ).matches ? "auto" : "smooth",
+        block: "start"
+      });
 
-                        if (
-                            !targetId ||
-                            targetId === "#"
-                        ) {
-
-                            return;
-
-                        }
-
-
-                        const target =
-                            document.querySelector(
-                                targetId
-                            );
-
-
-                        if (!target) {
-                            return;
-                        }
-
-
-                        event.preventDefault();
-
-
-                        target.scrollIntoView(
-                            {
-                                behavior:
-                                    "smooth"
-                            }
-                        );
-
-                    }
-                );
-
-            }
-        );
-
+      if (history.replaceState) {
+        history.replaceState(null, "", href);
+      }
+    });
+  });
 }
 
-
-/* =========================================================
-   REVEAL
-========================================================= */
+/* REVEAL ON SCROLL */
 
 function initReveal() {
+  const elements = $$(".reveal");
 
-    const elements =
-        document.querySelectorAll(
-            ".reveal"
-        );
+  if (!("IntersectionObserver" in window)) {
+    elements.forEach(element => element.classList.add("visible"));
+    return;
+  }
 
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("visible");
+        observer.unobserve(entry.target);
+      }
+    });
+  }, {
+    threshold: 0.08,
+    rootMargin: "0px 0px -25px 0px"
+  });
 
-    if (!elements.length) {
-        return;
-    }
-
-
-    const observer =
-        new IntersectionObserver(
-            entries => {
-
-                entries.forEach(
-                    entry => {
-
-                        if (
-                            entry.isIntersecting
-                        ) {
-
-                            entry.target.classList.add(
-                                "visible"
-                            );
-
-                            observer.unobserve(
-                                entry.target
-                            );
-
-                        }
-
-                    }
-                );
-
-            },
-            {
-                threshold: .12
-            }
-        );
-
-
-    elements.forEach(
-        element => {
-
-            observer.observe(
-                element
-            );
-
-        }
-    );
-
+  elements.forEach(element => observer.observe(element));
 }
 
-
-/* =========================================================
-   PROJECT FILTER
-========================================================= */
+/* PROJECT FILTER */
 
 function initProjectFilter() {
+  const filterButtons = $$(".filter-button");
+  const cards = $$(".project-card");
 
-    const buttons =
-        document.querySelectorAll(
-            ".filter-button"
-        );
+  if (!filterButtons.length || !cards.length) return;
 
-    const cards =
-        document.querySelectorAll(
-            ".project-card"
-        );
+  filterButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      const filter = button.dataset.filter || "all";
 
+      filterButtons.forEach(item => {
+        item.classList.toggle("active", item === button);
+      });
 
-    if (!buttons.length) {
-        return;
-    }
+      cards.forEach(card => {
+        const categories = (card.dataset.category || "").split(/\s+/);
+        const visible = filter === "all" || categories.includes(filter);
 
-
-    buttons.forEach(
-        button => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    const filter =
-                        button.dataset.filter;
-
-
-                    buttons.forEach(
-                        item => {
-
-                            item.classList.remove(
-                                "active"
-                            );
-
-                        }
-                    );
-
-
-                    button.classList.add(
-                        "active"
-                    );
-
-
-                    cards.forEach(
-                        card => {
-
-                            const category =
-                                card.dataset.category;
-
-
-                            if (
-                                filter === "all" ||
-                                category === filter
-                            ) {
-
-                                card.classList.remove(
-                                    "hidden"
-                                );
-
-                            } else {
-
-                                card.classList.add(
-                                    "hidden"
-                                );
-
-                            }
-
-                        }
-                    );
-
-                }
-            );
-
-        }
-    );
-
+        card.classList.toggle("is-hidden", !visible);
+      });
+    });
+  });
 }
 
-
-/* =========================================================
-   PROJECT MODAL
-========================================================= */
+/* PROJECT DETAILS MODAL */
 
 function initProjectModal() {
+  const modal = $(".project-modal");
 
-    const projectCards =
-        document.querySelectorAll(
-            ".project-card"
-        );
+  if (!modal) return;
 
-    const projectModal =
-        document.querySelector(
-            ".project-modal"
-        );
+  const closeButton = $(".modal-close", modal);
+  const overlay = $(".modal-overlay", modal);
+  const image = $("[data-modal-image]", modal);
+  const title = $("[data-modal-title]", modal);
+  const description = $("[data-modal-description]", modal);
+  const year = $("[data-modal-year]", modal);
+  const tags = $("[data-modal-tags]", modal);
+  const role = $("[data-modal-role]", modal);
+  const status = $("[data-modal-status]", modal);
+  const projectLink = $("[data-modal-link]", modal);
 
-    const modalOverlay =
-        document.querySelector(
-            ".modal-overlay"
-        );
+  let lastFocusedElement = null;
 
-    const modalClose =
-        document.querySelector(
-            ".modal-close"
-        );
+  const openModal = card => {
+    lastFocusedElement = document.activeElement;
 
+    const projectTitle = card.dataset.title || "Untitled Project";
+    const projectImage = card.dataset.image || "";
+    const projectDescription =
+      card.dataset.description || "Project details coming soon.";
+    const projectTags = (card.dataset.tags || "")
+      .split(",")
+      .map(tag => tag.trim())
+      .filter(Boolean);
 
-    const modalTitle =
-        document.querySelector(
-            "[data-modal-title]"
-        );
-
-    const modalDescription =
-        document.querySelector(
-            "[data-modal-description]"
-        );
-
-    const modalTags =
-        document.querySelector(
-            "[data-modal-tags]"
-        );
-
-    const modalImage =
-        document.querySelector(
-            "[data-modal-image]"
-        );
-
-    const modalYear =
-        document.querySelector(
-            "[data-modal-year]"
-        );
-
-    const modalRole =
-        document.querySelector(
-            "[data-modal-role]"
-        );
-
-    const modalStatus =
-        document.querySelector(
-            "[data-modal-status]"
-        );
-
-    const modalLink =
-        document.querySelector(
-            "[data-modal-link]"
-        );
-
-
-    if (!projectModal) {
-        return;
+    if (image) {
+      image.src = projectImage;
+      image.alt = projectTitle;
     }
 
-
-    function openProject(card) {
-
-        const title =
-            card.dataset.title ||
-            "UNTITLED PROJECT";
-
-
-        const description =
-            card.dataset.description ||
-            "No project description available.";
-
-
-        const tags =
-            card.dataset.tags ||
-            "";
-
-
-        const image =
-            card.dataset.image ||
-            "";
-
-
-        const year =
-            card.dataset.year ||
-            "2026";
-
-
-        const role =
-            card.dataset.role ||
-            "Developer";
-
-
-        const status =
-            card.dataset.status ||
-            "Completed";
-
-
-        const link =
-            card.dataset.link ||
-            "#";
-
-
-        if (modalTitle) {
-
-            modalTitle.textContent =
-                title;
-
-        }
-
-
-        if (modalDescription) {
-
-            modalDescription.textContent =
-                description;
-
-        }
-
-
-        if (modalYear) {
-
-            modalYear.textContent =
-                year;
-
-        }
-
-
-        if (modalRole) {
-
-            modalRole.textContent =
-                role;
-
-        }
-
-
-        if (modalStatus) {
-
-            modalStatus.textContent =
-                status;
-
-        }
-
-
-        if (
-            modalImage &&
-            image
-        ) {
-
-            modalImage.src =
-                image;
-
-            modalImage.alt =
-                `${title} project preview`;
-
-        }
-
-
-        if (modalLink) {
-
-            modalLink.href =
-                link;
-
-
-            if (link === "#") {
-
-                modalLink.style.display =
-                    "none";
-
-            } else {
-
-                modalLink.style.display =
-                    "inline-flex";
-
-            }
-
-        }
-
-
-        if (modalTags) {
-
-            modalTags.innerHTML =
-                "";
-
-
-            tags
-                .split(",")
-                .map(
-                    tag =>
-                        tag.trim()
-                )
-                .filter(Boolean)
-                .forEach(
-                    tag => {
-
-                        const element =
-                            document.createElement(
-                                "span"
-                            );
-
-
-                        element.textContent =
-                            tag;
-
-
-                        modalTags.appendChild(
-                            element
-                        );
-
-                    }
-                );
-
-        }
-
-
-        projectModal.classList.add(
-            "active"
-        );
-
-        projectModal.setAttribute(
-            "aria-hidden",
-            "false"
-        );
-
-
-        document.body.classList.add(
-            "modal-open"
-        );
-
+    if (title) title.textContent = projectTitle;
+    if (description) description.textContent = projectDescription;
+    if (year) year.textContent = card.dataset.year || "2026";
+    if (role) role.textContent = card.dataset.role || "Developer";
+    if (status) status.textContent = card.dataset.status || "In Development";
+
+    if (tags) {
+      tags.replaceChildren();
+
+      projectTags.forEach(tag => {
+        const element = document.createElement("span");
+        element.textContent = tag;
+        tags.appendChild(element);
+      });
     }
 
-
-    function closeProject() {
-
-        projectModal.classList.remove(
-            "active"
-        );
-
-        projectModal.setAttribute(
-            "aria-hidden",
-            "true"
-        );
-
-        document.body.classList.remove(
-            "modal-open"
-        );
-
+    if (projectLink) {
+      const href = card.dataset.link || "#";
+      projectLink.href = href;
+      projectLink.style.display = href === "#" ? "none" : "inline-flex";
     }
 
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
 
-    projectCards.forEach(
-        card => {
+    if (closeButton) closeButton.focus();
+  };
 
-            card.addEventListener(
-                "click",
-                event => {
+  const closeModal = () => {
+    if (!modal.classList.contains("open")) return;
 
-                    if (
-                        event.target.closest(
-                            "a"
-                        )
-                    ) {
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-open");
 
-                        return;
-
-                    }
-
-
-                    openProject(
-                        card
-                    );
-
-                }
-            );
-
-        }
-    );
-
-
-    document
-        .querySelectorAll(
-            ".project-open"
-        )
-        .forEach(
-            button => {
-
-                button.addEventListener(
-                    "click",
-                    event => {
-
-                        event.stopPropagation();
-
-
-                        const card =
-                            button.closest(
-                                ".project-card"
-                            );
-
-
-                        if (card) {
-
-                            openProject(
-                                card
-                            );
-
-                        }
-
-                    }
-                );
-
-            }
-        );
-
-
-    if (modalClose) {
-
-        modalClose.addEventListener(
-            "click",
-            closeProject
-        );
-
+    if (lastFocusedElement instanceof HTMLElement) {
+      lastFocusedElement.focus();
     }
+  };
 
+  $$(".project-card").forEach(card => {
+    const openButtons = $$(".project-open", card);
+    const preview = $(".project-preview", card);
 
-    if (modalOverlay) {
+    openButtons.forEach(button => {
+      button.addEventListener("click", () => openModal(card));
+    });
 
-        modalOverlay.addEventListener(
-            "click",
-            closeProject
-        );
-
+    if (preview) {
+      preview.addEventListener("click", () => openModal(card));
+      preview.style.cursor = "pointer";
     }
+  });
 
+  if (closeButton) {
+    closeButton.addEventListener("click", closeModal);
+  }
 
-    document.addEventListener(
-        "keydown",
-        event => {
+  if (overlay) {
+    overlay.addEventListener("click", closeModal);
+  }
 
-            if (
-                event.key ===
-                "Escape"
-            ) {
-
-                closeProject();
-
-            }
-
-        }
-    );
-
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && modal.classList.contains("open")) {
+      closeModal();
+    }
+  });
 }
 
-
-/* =========================================================
-   CURSOR
-========================================================= */
+/* CUSTOM CURSOR */
 
 function initCursor() {
+  const cursor = $(".cursor");
+  const ring = $(".cursor-ring");
 
-    const cursor =
-        document.querySelector(
-            ".cursor"
-        );
+  if (!cursor || !ring) return;
 
-    const ring =
-        document.querySelector(
-            ".cursor-ring"
-        );
+  if (window.matchMedia("(pointer: coarse)").matches) return;
 
+  let mouseX = -100;
+  let mouseY = -100;
+  let ringX = -100;
+  let ringY = -100;
 
-    if (
-        !cursor ||
-        !ring ||
-        window.matchMedia(
-            "(pointer: coarse)"
-        ).matches
-    ) {
+  document.addEventListener("mousemove", event => {
+    mouseX = event.clientX;
+    mouseY = event.clientY;
 
-        return;
+    cursor.style.transform =
+      `translate3d(${mouseX - 2.5}px, ${mouseY - 2.5}px, 0)`;
 
-    }
+    document.body.classList.add("cursor-ready");
+  });
 
+  const animateRing = () => {
+    ringX += (mouseX - ringX) * 0.16;
+    ringY += (mouseY - ringY) * 0.16;
 
-    let mouseX = 0;
+    ring.style.transform =
+      `translate3d(${ringX - 14}px, ${ringY - 14}px, 0)`;
 
-    let mouseY = 0;
+    requestAnimationFrame(animateRing);
+  };
 
-    let ringX = 0;
+  animateRing();
 
-    let ringY = 0;
+  document.addEventListener("mouseleave", () => {
+    document.body.classList.remove("cursor-ready");
+  });
 
-
-    document.addEventListener(
-        "mousemove",
-        event => {
-
-            mouseX =
-                event.clientX;
-
-            mouseY =
-                event.clientY;
-
-
-            cursor.style.left =
-                `${mouseX}px`;
-
-            cursor.style.top =
-                `${mouseY}px`;
-
-        }
-    );
-
-
-    function animateRing() {
-
-        ringX +=
-            (mouseX - ringX) *
-            .16;
-
-        ringY +=
-            (mouseY - ringY) *
-            .16;
-
-
-        ring.style.left =
-            `${ringX}px`;
-
-        ring.style.top =
-            `${ringY}px`;
-
-
-        requestAnimationFrame(
-            animateRing
-        );
-
-    }
-
-
-    animateRing();
-
-
-    document
-        .querySelectorAll(
-            "a, button"
-        )
-        .forEach(
-            element => {
-
-                element.addEventListener(
-                    "mouseenter",
-                    () => {
-
-                        ring.style.width =
-                            "42px";
-
-                        ring.style.height =
-                            "42px";
-
-                        ring.style.borderColor =
-                            "rgba(0,229,255,.9)";
-
-                    }
-                );
-
-
-                element.addEventListener(
-                    "mouseleave",
-                    () => {
-
-                        ring.style.width =
-                            "28px";
-
-                        ring.style.height =
-                            "28px";
-
-                        ring.style.borderColor =
-                            "rgba(0,229,255,.5)";
-
-                    }
-                );
-
-            }
-        );
-
+  document.addEventListener("mouseenter", () => {
+    document.body.classList.add("cursor-ready");
+  });
 }
 
-
-/* =========================================================
-   CLOCK
-========================================================= */
+/* DIGITAL CLOCK */
 
 function initClock() {
+  const clock = $("[data-clock]");
 
-    const clock =
-        document.querySelector(
-            "[data-clock]"
-        );
+  if (!clock) return;
 
+  const updateClock = () => {
+    const now = new Date();
 
-    if (!clock) {
-        return;
-    }
+    clock.textContent = now.toLocaleTimeString("en-GB", {
+      hour12: false,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    });
+  };
 
-
-    function updateClock() {
-
-        const now =
-            new Date();
-
-
-        const hours =
-            String(
-                now.getHours()
-            ).padStart(
-                2,
-                "0"
-            );
-
-
-        const minutes =
-            String(
-                now.getMinutes()
-            ).padStart(
-                2,
-                "0"
-            );
-
-
-        const seconds =
-            String(
-                now.getSeconds()
-            ).padStart(
-                2,
-                "0"
-            );
-
-
-        clock.textContent =
-            `${hours}:${minutes}:${seconds}`;
-
-    }
-
-
-    updateClock();
-
-
-    setInterval(
-        updateClock,
-        1000
-    );
-
+  updateClock();
+  window.setInterval(updateClock, 1000);
 }
-
 
 /* =========================================================
-   CORE INTERACTION
+   CERTIFICATE VIEWER
+   Click a certificate to enlarge it.
+   Close using X, backdrop, or Escape.
 ========================================================= */
 
-function initCoreInteraction() {
+function initCertificateViewer() {
+  const lightbox = $("#certificateLightbox");
+  const lightboxImage = $("#certificateLightboxImage");
+  const lightboxTitle = $("#certificateLightboxTitle");
 
-    const core =
-        document.querySelector(
-            ".core-system"
-        );
+  if (!lightbox || !lightboxImage || !lightboxTitle) return;
 
+  const closeButtons = $$("[data-certificate-close]", lightbox);
+  const openButtons = $$("[data-certificate-open]");
+  const closeButton = $(".certificate-lightbox-close", lightbox);
 
-    if (!core) {
-        return;
+  let lastFocusedElement = null;
+  let currentImagePath = "";
+
+  const openCertificate = button => {
+    const imagePath = button.dataset.image;
+    const title = button.dataset.title || "Certificate";
+
+    if (!imagePath) {
+      console.error("Certificate image path is missing.");
+      return;
     }
 
+    lastFocusedElement = document.activeElement;
+    currentImagePath = imagePath;
 
-    core.addEventListener(
-        "mousemove",
-        event => {
+    lightboxTitle.textContent = title;
+    lightboxImage.alt = title;
+    lightboxImage.src = imagePath;
 
-            const rect =
-                core.getBoundingClientRect();
+    lightboxImage.onerror = () => {
+      console.error(`Certificate image could not be loaded: ${currentImagePath}`);
+      lightboxImage.removeAttribute("src");
+      lightboxImage.alt = "Certificate image not found. Check the image path.";
+      lightboxTitle.textContent = `${title} — IMAGE NOT FOUND`;
+    };
 
+    lightbox.classList.add("open");
+    lightbox.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
 
-            const x =
-                (
-                    event.clientX -
-                    rect.left
-                ) /
-                rect.width -
-                .5;
+    if (closeButton) closeButton.focus();
+  };
 
+  const closeCertificate = () => {
+    if (!lightbox.classList.contains("open")) return;
 
-            const y =
-                (
-                    event.clientY -
-                    rect.top
-                ) /
-                rect.height -
-                .5;
+    lightbox.classList.remove("open");
+    lightbox.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-open");
 
+    // Keep the image loaded until the closing animation is complete.
+    window.setTimeout(() => {
+      if (!lightbox.classList.contains("open")) {
+        lightboxImage.removeAttribute("src");
+      }
+    }, 250);
 
-            core.style.transform =
-                `
-                rotateX(${y * -5}deg)
-                rotateY(${x * 5}deg)
-                scale(1.02)
-                `;
+    if (lastFocusedElement instanceof HTMLElement) {
+      lastFocusedElement.focus();
+    }
+  };
 
-        }
-    );
+  openButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      openCertificate(button);
+    });
+  });
 
+  closeButtons.forEach(button => {
+    button.addEventListener("click", closeCertificate);
+  });
 
-    core.addEventListener(
-        "mouseleave",
-        () => {
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && lightbox.classList.contains("open")) {
+      closeCertificate();
+    }
 
-            core.style.transform =
-                "";
+    if (event.key === "Tab" && lightbox.classList.contains("open")) {
+      const focusable = $$(
+        'button, a[href], input, [tabindex]:not([tabindex="-1"])',
+        lightbox
+      ).filter(element => !element.disabled);
 
-        }
-    );
+      if (!focusable.length) return;
 
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+  });
 }
-
-
-/* =========================================================
-   BUTTON EFFECTS
-========================================================= */
-
-function initButtons() {
-
-    document
-        .querySelectorAll(
-            ".button, .contact-button"
-        )
-        .forEach(
-            button => {
-
-                button.addEventListener(
-                    "mousemove",
-                    event => {
-
-                        const rect =
-                            button.getBoundingClientRect();
-
-
-                        const x =
-                            event.clientX -
-                            rect.left;
-
-
-                        const y =
-                            event.clientY -
-                            rect.top;
-
-
-                        button.style.setProperty(
-                            "--mx",
-                            `${x}px`
-                        );
-
-
-                        button.style.setProperty(
-                            "--my",
-                            `${y}px`
-                        );
-
-                    }
-                );
-
-            }
-        );
-
-}
-
 
 /* =========================================================
    MUSIC PLAYER
+   Images are cover art, NOT audio files.
+   Add actual audio files and set their paths below.
 ========================================================= */
 
 function initMusic() {
+  const audio = $("#audioPlayer");
+  const playButton = $(".music-play");
+  const previousButton = $("[data-music-prev]");
+  const nextButton = $("[data-music-next]");
+  const progress = $("#musicProgress");
+  const volume = $("#musicVolume");
+  const title = $("#musicTitle");
+  const artist = $("#musicArtist");
+  const cover = $("#musicCover");
+  const coverIndex = $("#coverIndex");
+  const currentTime = $("#currentTime");
+  const duration = $("#duration");
+  const playlistTracks = $$(".playlist-track");
 
-    const audio =
-        document.querySelector(
-            "#audioPlayer"
-        );
+  if (!audio || !playButton || !playlistTracks.length) return;
 
+  // Put your real audio files at these paths.
+  // Example: assets/audio/song-one.mp3
+  const tracks = [
+    {
+      title: "Shut It Down",
+      artist: "Drake",
+      cover: "shutitdown.webp",
+      source: "assets/audio/shutitdown.mp3"
+    },
+    {
+      title: "Jatuh Hati",
+      artist: "Raisa",
+      cover: "jatuhhati.webp",
+      source: "assets/audio/jatuhhati.mp3"
+    },
+    {
+      title: "thanK you alMee",
+      artist: "Taylor Swift",
+      cover: "thankyoualmee.webp",
+      source: "assets/audio/thankyoualmee.mp3"
+    }
+  ];
 
-    const playButton =
-        document.querySelector(
-            ".music-play"
-        );
+  let activeIndex = 0;
 
+  const formatTime = seconds => {
+    if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
 
-    const previousButton =
-        document.querySelector(
-            "[data-music-prev]"
-        );
+    const minutes = Math.floor(seconds / 60);
+    const remainder = Math.floor(seconds % 60);
 
+    return `${minutes}:${String(remainder).padStart(2, "0")}`;
+  };
 
-    const nextButton =
-        document.querySelector(
-            "[data-music-next]"
-        );
+  const updatePlayIcon = playing => {
+    const icon = $("i", playButton);
 
-
-    const progress =
-        document.querySelector(
-            "#musicProgress"
-        );
-
-
-    const volume =
-        document.querySelector(
-            "#musicVolume"
-        );
-
-
-    const title =
-        document.querySelector(
-            "#musicTitle"
-        );
-
-
-    const artist =
-        document.querySelector(
-            "#musicArtist"
-        );
-
-
-    const cover =
-        document.querySelector(
-            "#musicCover"
-        );
-
-
-    const coverIndex =
-        document.querySelector(
-            "#coverIndex"
-        );
-
-
-    const currentTime =
-        document.querySelector(
-            "#currentTime"
-        );
-
-
-    const duration =
-        document.querySelector(
-            "#duration"
-        );
-
-
-    const musicSystem =
-        document.querySelector(
-            ".music-system"
-        );
-
-
-    const playlistTracks =
-        document.querySelectorAll(
-            ".playlist-track"
-        );
-
-
-    if (
-        !audio ||
-        !playButton
-    ) {
-
-        return;
-
+    if (icon) {
+      icon.className = playing
+        ? "fa-solid fa-pause"
+        : "fa-solid fa-play";
     }
 
+    playButton.setAttribute(
+      "aria-label",
+      playing ? "Pause music" : "Play music"
+    );
+  };
 
-    const tracks = [
+  const updateTrackUI = () => {
+    const track = tracks[activeIndex];
 
-        {
-            title:
-                "Shut it down",
-
-            artist:
-                "Drake",
-
-            cover:
-                "shutitdown.webp",
-
-            source:
-                "shutitdown.webp"
-        },
-
-        {
-            title:
-                "Jatuh Hati",
-
-            artist:
-                "Raisa",
-
-            cover:
-                "jatuhhati.webp",
-
-            source:
-                "jatuhhati.webp"
-        },
-
-        {
-            title:
-                "thanK you alMee",
-
-            artist:
-                "Taylor Swift",
-
-            cover:
-                "thankyoualmee.webp",
-
-            source:
-                "thankyoualmee.webp"
-        }
-
-    ];
-
-
-    let currentTrack =
-        0;
-
-
-    let isPlaying =
-        false;
-
-
-    audio.volume =
-        .8;
-
-
-    function formatTime(seconds) {
-
-        if (
-            !Number.isFinite(seconds)
-        ) {
-
-            return "0:00";
-
-        }
-
-
-        const minutes =
-            Math.floor(
-                seconds / 60
-            );
-
-
-        const remaining =
-            Math.floor(
-                seconds % 60
-            );
-
-
-        return `${minutes}:${String(
-            remaining
-        ).padStart(2,"0")}`;
-
+    if (title) title.textContent = track.title;
+    if (artist) artist.textContent = track.artist;
+    if (cover) {
+      cover.src = track.cover;
+      cover.alt = `${track.title} cover`;
+    }
+    if (coverIndex) {
+      coverIndex.textContent = String(activeIndex + 1).padStart(2, "0");
     }
 
+    playlistTracks.forEach((button, index) => {
+      const isActive = index === activeIndex;
+      button.classList.toggle("active", isActive);
 
-    function updatePlayIcon() {
+      const icon = $(".track-play i", button);
+      if (icon) {
+        icon.className = isActive && !audio.paused
+          ? "fa-solid fa-pause"
+          : "fa-solid fa-play";
+      }
+    });
+  };
 
-        const icon =
-            playButton.querySelector(
-                "i"
-            );
+  const loadTrack = (index, autoplay = false) => {
+    activeIndex = (index + tracks.length) % tracks.length;
 
+    const track = tracks[activeIndex];
 
-        if (!icon) {
-            return;
-        }
+    audio.src = track.source;
+    audio.load();
 
+    if (progress) progress.value = "0";
+    if (currentTime) currentTime.textContent = "0:00";
+    if (duration) duration.textContent = "0:00";
 
-        if (isPlaying) {
+    updateTrackUI();
+    updatePlayIcon(false);
 
-            icon.className =
-                "fa-solid fa-pause";
+    if (autoplay) {
+      playTrack();
+    }
+  };
 
-        } else {
+  const playTrack = async () => {
+    if (!audio.src) loadTrack(activeIndex);
 
-            icon.className =
-                "fa-solid fa-play";
+    try {
+      await audio.play();
+      updatePlayIcon(true);
+      updateTrackUI();
+    } catch (error) {
+      updatePlayIcon(false);
+      updateTrackUI();
 
-        }
+      console.warn(
+        "Audio could not play. Check that the audio file exists:",
+        tracks[activeIndex].source,
+        error
+      );
+    }
+  };
 
+  const pauseTrack = () => {
+    audio.pause();
+    updatePlayIcon(false);
+    updateTrackUI();
+  };
+
+  playButton.addEventListener("click", () => {
+    if (audio.paused) {
+      playTrack();
+    } else {
+      pauseTrack();
+    }
+  });
+
+  previousButton?.addEventListener("click", () => {
+    loadTrack(activeIndex - 1, true);
+  });
+
+  nextButton?.addEventListener("click", () => {
+    loadTrack(activeIndex + 1, true);
+  });
+
+  playlistTracks.forEach((button, index) => {
+    button.addEventListener("click", () => {
+      loadTrack(index, true);
+    });
+  });
+
+  audio.addEventListener("timeupdate", () => {
+    if (progress && Number.isFinite(audio.duration) && audio.duration > 0) {
+      progress.value = String((audio.currentTime / audio.duration) * 100);
     }
 
-
-    function loadTrack(
-        index,
-        shouldPlay = false
-    ) {
-
-        if (
-            index < 0
-        ) {
-
-            index =
-                tracks.length - 1;
-
-        }
-
-
-        if (
-            index >= tracks.length
-        ) {
-
-            index =
-                0;
-
-        }
-
-
-        currentTrack =
-            index;
-
-
-        const track =
-            tracks[
-                currentTrack
-            ];
-
-
-        audio.src =
-            track.source;
-
-
-        audio.load();
-
-
-        if (title) {
-
-            title.textContent =
-                track.title;
-
-        }
-
-
-        if (artist) {
-
-            artist.textContent =
-                track.artist;
-
-        }
-
-
-        if (cover) {
-
-            cover.src =
-                track.cover;
-
-            cover.alt =
-                `${track.title} cover`;
-
-        }
-
-
-        if (coverIndex) {
-
-            coverIndex.textContent =
-                String(
-                    currentTrack + 1
-                ).padStart(
-                    2,
-                    "0"
-                );
-
-        }
-
-
-        playlistTracks.forEach(
-            (trackElement, index) => {
-
-                trackElement.classList.toggle(
-                    "active",
-                    index === currentTrack
-                );
-
-            }
-        );
-
-
-        progress.value =
-            0;
-
-
-        if (currentTime) {
-
-            currentTime.textContent =
-                "0:00";
-
-        }
-
-
-        if (duration) {
-
-            duration.textContent =
-                "0:00";
-
-        }
-
-
-        if (shouldPlay) {
-
-            const playPromise =
-                audio.play();
-
-
-            if (
-                playPromise &&
-                typeof playPromise.catch ===
-                "function"
-            ) {
-
-                playPromise.catch(
-                    () => {
-
-                        isPlaying =
-                            false;
-
-                        updatePlayIcon();
-
-                    }
-                );
-
-            }
-
-        }
-
+    if (currentTime) {
+      currentTime.textContent = formatTime(audio.currentTime);
     }
+  });
 
+  audio.addEventListener("loadedmetadata", () => {
+    if (duration) duration.textContent = formatTime(audio.duration);
+  });
 
-    function togglePlay() {
+  audio.addEventListener("ended", () => {
+    loadTrack(activeIndex + 1, true);
+  });
 
-        if (
-            !audio.src ||
-            audio.src.endsWith("/")
-        ) {
+  audio.addEventListener("play", () => {
+    updatePlayIcon(true);
+    updateTrackUI();
+  });
 
-            loadTrack(
-                currentTrack,
-                false
-            );
+  audio.addEventListener("pause", () => {
+    updatePlayIcon(false);
+    updateTrackUI();
+  });
 
-        }
+  audio.addEventListener("error", () => {
+    updatePlayIcon(false);
+    console.warn(
+      `Audio file not found or unsupported: ${tracks[activeIndex].source}`
+    );
+  });
 
-
-        if (
-            audio.paused
-        ) {
-
-            const playPromise =
-                audio.play();
-
-
-            if (
-                playPromise &&
-                typeof playPromise.then ===
-                "function"
-            ) {
-
-                playPromise
-                    .then(
-                        () => {
-
-                            isPlaying =
-                                true;
-
-                            musicSystem?.classList.add(
-                                "playing"
-                            );
-
-                            updatePlayIcon();
-
-                        }
-                    )
-                    .catch(
-                        () => {
-
-                            isPlaying =
-                                false;
-
-                            updatePlayIcon();
-
-                        }
-                    );
-
-            }
-
-        } else {
-
-            audio.pause();
-
-            isPlaying =
-                false;
-
-            musicSystem?.classList.remove(
-                "playing"
-            );
-
-            updatePlayIcon();
-
-        }
-
+  progress?.addEventListener("input", () => {
+    if (Number.isFinite(audio.duration) && audio.duration > 0) {
+      audio.currentTime = (Number(progress.value) / 100) * audio.duration;
     }
+  });
 
+  volume?.addEventListener("input", () => {
+    audio.volume = Number(volume.value);
+  });
 
-    playButton.addEventListener(
-        "click",
-        togglePlay
-    );
+  audio.volume = volume ? Number(volume.value) : 0.8;
 
-
-    if (previousButton) {
-
-        previousButton.addEventListener(
-            "click",
-            () => {
-
-                loadTrack(
-                    currentTrack - 1,
-                    isPlaying
-                );
-
-            }
-        );
-
-    }
-
-
-    if (nextButton) {
-
-        nextButton.addEventListener(
-            "click",
-            () => {
-
-                loadTrack(
-                    currentTrack + 1,
-                    isPlaying
-                );
-
-            }
-        );
-
-    }
-
-
-    playlistTracks.forEach(
-        trackElement => {
-
-            trackElement.addEventListener(
-                "click",
-                () => {
-
-                    const index =
-                        Number(
-                            trackElement.dataset.trackIndex
-                        );
-
-
-                    loadTrack(
-                        index,
-                        true
-                    );
-
-                }
-            );
-
-        }
-    );
-
-
-    audio.addEventListener(
-        "loadedmetadata",
-        () => {
-
-            if (duration) {
-
-                duration.textContent =
-                    formatTime(
-                        audio.duration
-                    );
-
-            }
-
-        }
-    );
-
-
-    audio.addEventListener(
-        "timeupdate",
-        () => {
-
-            if (
-                !Number.isFinite(
-                    audio.duration
-                )
-            ) {
-
-                return;
-
-            }
-
-
-            const percentage =
-                (
-                    audio.currentTime /
-                    audio.duration
-                ) * 100;
-
-
-            if (progress) {
-
-                progress.value =
-                    percentage;
-
-            }
-
-
-            if (currentTime) {
-
-                currentTime.textContent =
-                    formatTime(
-                        audio.currentTime
-                    );
-
-            }
-
-
-            if (duration) {
-
-                duration.textContent =
-                    formatTime(
-                        audio.duration
-                    );
-
-            }
-
-        }
-    );
-
-
-    if (progress) {
-
-        progress.addEventListener(
-            "input",
-            () => {
-
-                if (
-                    !Number.isFinite(
-                        audio.duration
-                    )
-                ) {
-
-                    return;
-
-                }
-
-
-                audio.currentTime =
-                    (
-                        Number(
-                            progress.value
-                        ) / 100
-                    ) *
-                    audio.duration;
-
-            }
-        );
-
-    }
-
-
-    if (volume) {
-
-        volume.addEventListener(
-            "input",
-            () => {
-
-                audio.volume =
-                    Number(
-                        volume.value
-                    );
-
-            }
-        );
-
-    }
-
-
-    audio.addEventListener(
-        "play",
-        () => {
-
-            isPlaying =
-                true;
-
-            musicSystem?.classList.add(
-                "playing"
-            );
-
-            updatePlayIcon();
-
-        }
-    );
-
-
-    audio.addEventListener(
-        "pause",
-        () => {
-
-            isPlaying =
-                false;
-
-            musicSystem?.classList.remove(
-                "playing"
-            );
-
-            updatePlayIcon();
-
-        }
-    );
-
-
-    audio.addEventListener(
-        "ended",
-        () => {
-
-            loadTrack(
-                currentTrack + 1,
-                true
-            );
-
-        }
-    );
-
-
-    audio.addEventListener(
-        "error",
-        () => {
-
-            isPlaying =
-                false;
-
-            musicSystem?.classList.remove(
-                "playing"
-            );
-
-            updatePlayIcon();
-
-        }
-    );
-
-
-    loadTrack(
-        0,
-        false
-    );
-
+  loadTrack(0, false);
 }
-
-
-/* =========================================================
-   PERFORMANCE
-========================================================= */
-
-document.addEventListener(
-    "visibilitychange",
-    () => {
-
-        if (
-            document.hidden
-        ) {
-
-            document
-                .querySelectorAll(
-                    ".core-ring, .core-orbit"
-                )
-                .forEach(
-                    element => {
-
-                        element.style.animationPlayState =
-                            "paused";
-
-                    }
-                );
-
-        } else {
-
-            document
-                .querySelectorAll(
-                    ".core-ring, .core-orbit"
-                )
-                .forEach(
-                    element => {
-
-                        element.style.animationPlayState =
-                            "running";
-
-                    }
-                );
-
-        }
-
-    }
-);
